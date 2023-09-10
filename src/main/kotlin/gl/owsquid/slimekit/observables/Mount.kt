@@ -2,9 +2,11 @@ package gl.owsquid.slimekit.observables
 
 import gl.owsquid.slimekit.Context
 import gl.owsquid.slimekit.ExampleMod.logger
+import gl.owsquid.slimekit.context
 import java.util.*
 
-fun Context.dismount(onDismount: () -> Unit) {
+fun dismount(onDismount: () -> Unit) {
+    val ctx = context()
     val uuid = UUID.randomUUID()
     var called = false
     val callback = {
@@ -14,5 +16,5 @@ fun Context.dismount(onDismount: () -> Unit) {
         }
     }
 
-    dismounts[uuid] = callback
+    ctx.dismounts[uuid] = callback
 }

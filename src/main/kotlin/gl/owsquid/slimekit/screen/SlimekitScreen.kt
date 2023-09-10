@@ -1,6 +1,7 @@
 package gl.owsquid.slimekit.screen
 
 import gl.owsquid.slimekit.Context
+import gl.owsquid.slimekit.contexts
 import net.minecraft.client.gui.DrawContext
 import net.minecraft.client.gui.Drawable
 import net.minecraft.client.gui.Element
@@ -44,7 +45,11 @@ class SlimekitScreen(
     internal var configuration = ScreenConfiguration()
     private val context = Context.Root(ScreenBuilders(this))
 
-    override fun init() = element(context)
+    override fun init() {
+        contexts.push(context)
+        element(context)
+        contexts.pop()
+    }
 
     internal fun <T> addDrawableSlimekit(drawableElement: T) where T: Drawable {
         this.addDrawable(drawableElement)

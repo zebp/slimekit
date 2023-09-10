@@ -7,9 +7,18 @@ import net.minecraft.text.Text
 import java.util.*
 import kotlin.streams.toList
 
-internal var currentContext: Context? = null
+var contexts = Stack<Context>()
 
-data class ContextReference(var context: Context)
+fun context(): Context {
+    val currentContext = maybeContext()
+    if (currentContext != null) {
+        return currentContext
+    } else {
+        throw IllegalStateException("how")
+    }
+}
+
+fun maybeContext(): Context? = try { contexts.peek() } catch (_: EmptyStackException) { null }
 
 sealed class Context(open val screenBuilders: ScreenBuilders) {
     internal val dismounts: MutableMap<UUID, () -> Unit> = mutableMapOf()
@@ -28,30 +37,6 @@ sealed class Context(open val screenBuilders: ScreenBuilders) {
         init {
             parent.children.add(this)
         }
-    }
-
-    fun element(build: Context.() -> Unit) {
-        if (name == "unnamed") {
-            name = StackWalker.getInstance()
-                .walk {
-                    it.dropWhile {
-                        method -> method.methodName.first().isLowerCase()
-                    }.toList()
-                }.first().methodName
-        }
-
-        val ctx = Populated(
-            parent = this,
-            rebuild = build
-        )
-
-        currentContext = ctx
-        ctx.build()
-        currentContext = null
-    }
-
-    fun <T> signal(initialValue: T): Signal<T> {
-        return Signal(initialValue)
     }
 
     fun dismount() {
@@ -98,8 +83,9 @@ sealed class Context(open val screenBuilders: ScreenBuilders) {
                 rebuild = rebuild,
             )
 
-            currentContext = freshContext
+            contexts.push(freshContext)
             rebuild(freshContext)
+            contexts.pop()
 
             val childIndex = parent.children.indexOf(this)
             parent.children[childIndex] = freshContext
@@ -110,4 +96,26 @@ sealed class Context(open val screenBuilders: ScreenBuilders) {
             signal.removeObservation(id)
         }
     }
+}
+
+fun element(build: Context.() -> Unit) {
+    val current = context()
+
+    if (current.name == "unnamed") {
+        current.name = StackWalker.getInstance()
+            .walk {
+                it.dropWhile {
+                        method -> method.methodName.first().isLowerCase()
+                }.toList()
+            }.first().methodName
+    }
+
+    val ctx = Context.Populated(
+        parent = current,
+        rebuild = build
+    )
+
+    contexts.push(ctx)
+    ctx.build()
+    contexts.pop()
 }

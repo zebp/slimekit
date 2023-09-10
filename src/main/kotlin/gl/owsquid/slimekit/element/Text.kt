@@ -1,6 +1,8 @@
 package gl.owsquid.slimekit.element
 
 import gl.owsquid.slimekit.Context
+import gl.owsquid.slimekit.context
+import gl.owsquid.slimekit.element
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.font.TextRenderer
 import net.minecraft.client.gui.DrawContext
@@ -9,16 +11,12 @@ import net.minecraft.client.gui.Element
 import net.minecraft.text.Text
 
 fun Text(
-    ctx: Context,
     text: Text,
     textRenderer: TextRenderer = MinecraftClient.getInstance().textRenderer,
     shadow: Boolean = false,
     color: Int = -1,
-) = ctx.element {
-    DrawableChild(
-        this,
-        TextDrawable(text, textRenderer, shadow, color)
-    )
+) = element {
+    DrawableChild(TextDrawable(text, textRenderer, shadow, color))
 }
 
 class TextDrawable(

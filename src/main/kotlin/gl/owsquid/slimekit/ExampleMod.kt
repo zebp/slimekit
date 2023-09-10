@@ -1,10 +1,7 @@
 package gl.owsquid.slimekit
 
 import gl.owsquid.slimekit.ExampleMod.logger
-import gl.owsquid.slimekit.element.Button
-import gl.owsquid.slimekit.element.ButtonPosition
-import gl.owsquid.slimekit.element.Screen
-import gl.owsquid.slimekit.element.Text
+import gl.owsquid.slimekit.element.*
 import gl.owsquid.slimekit.hooks.every
 import gl.owsquid.slimekit.observables.Signal
 import gl.owsquid.slimekit.observables.dismount
@@ -20,6 +17,7 @@ import net.minecraft.text.Text
 import org.lwjgl.glfw.GLFW
 import org.slf4j.LoggerFactory
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
 
 
 object ExampleMod : ModInitializer {
@@ -40,58 +38,36 @@ object ExampleMod : ModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(ClientTickEvents.EndTick { client: MinecraftClient ->
             while (debugKey.wasPressed()) {
-                val screen = SlimekitScreen(Text.literal("lol!")) { TabbedScreen(it) }
+                val screen = SlimekitScreen(Text.literal("lol!")) { TabbedScreen() }
                 MinecraftClient.getInstance().setScreen(screen)
             }
         })
     }
 }
 
-fun CounterScreen(ctx: Context) = ctx.element {
-    var count by signal(0)
-    var seconds by signal(0)
-
-    effect { logger.info("Count is now $count") }
-
-    every(1.seconds) { seconds++ }
-
-    Screen(ctx, pause = false) {
-        Text(
-            ctx = this,
-            text = "Clicked $count times ($seconds seconds)".literal,
-            shadow = true,
-        )
-
-        Button(
-            ctx = this,
-            text = "Increment count".literal,
-            onClick = { count++ },
-        )
-    }
-}
-
-fun TabbedScreen(ctx: Context) = ctx.element {
+fun TabbedScreen() = element {
     var tab by Signal(0)
 
-    Screen(ctx) {
-        TabButton(ctx = this, 0) { tab = 0 }
-        TabButton(ctx = this, 1) { tab = 1 }
+    Screen {
+        TabButton(tabIndex = 0) { tab = 0 }
+        TabButton(tabIndex = 1) { tab = 1 }
+        TabButton(tabIndex = 2) { tab = 2 }
 
         Fragment {
             when (tab) {
-                0 -> FirstTab(ctx = this)
-                1 -> SecondTab(ctx = this)
+                0 -> FirstTab()
+                1 -> SecondTab()
+                2 -> ThirdTab()
             }
         }
     }
 }
 
-fun FirstTab(ctx: Context) = ctx.element {
-    var count by signal(0)
+fun FirstTab() = element {
+    var count by Signal(0)
 
     Fragment {
         Button(
-            ctx = this,
             text = "Increment $count".literal,
             onClick = { count++ },
             position = ButtonPosition(y = 45)
@@ -99,27 +75,39 @@ fun FirstTab(ctx: Context) = ctx.element {
     }
 }
 
-fun SecondTab(ctx: Context) = ctx.element {
-    var time by signal(Date())
+fun SecondTab() = element {
+    var time by Signal(Date())
 
     every(1.seconds) { time = Date() }
 
     Fragment {
         Text(
-            ctx = this,
             text = "The time is $time".literal,
             shadow = true,
         )
     }
 }
 
+fun ThirdTab() = element {
+    val textSignal = Signal("")
+    val text by textSignal
+
+    Fragment {
+        Fragment {
+            Text(
+                text = "You typed \"$text\"".literal,
+                shadow = true,
+            )
+        }
+        TextField(textSignal = textSignal, placeholder = "Placeholder".literal)
+    }
+}
+
 fun TabButton(
-    ctx: Context,
     tabIndex: Int = 0,
     onClick: () -> Unit,
-) = ctx.element {
+) = element {
     Button(
-        ctx = this,
         text = "Tab ${tabIndex + 1}".literal,
         onClick = onClick,
         position = ButtonPosition(x = 160 * tabIndex + 5, y = 5)

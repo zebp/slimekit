@@ -1,12 +1,8 @@
 package gl.owsquid.slimekit.observables
 
-import gl.owsquid.slimekit.Context
-import gl.owsquid.slimekit.ContextReference
-import gl.owsquid.slimekit.currentContext
+import gl.owsquid.slimekit.*
 import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.collections.HashMap
-import kotlin.properties.ObservableProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -26,7 +22,7 @@ class Signal<T>(initialValue: T) : ReadWriteProperty<Any?, T> {
         currentSignalObserver?.apply {
             observers[UUID.randomUUID()] = this
         }
-        currentContext?.apply { observesSignal(self) }
+        maybeContext()?.apply { observesSignal(self) }
 
         return value
     }
@@ -54,4 +50,6 @@ class Signal<T>(initialValue: T) : ReadWriteProperty<Any?, T> {
     fun removeObservation(id: UUID) {
         observers.remove(id)
     }
+
+    fun currentValue() = this.value
 }

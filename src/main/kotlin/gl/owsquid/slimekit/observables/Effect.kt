@@ -1,6 +1,7 @@
 package gl.owsquid.slimekit.observables
 
-import gl.owsquid.slimekit.currentContext
+import gl.owsquid.slimekit.contexts
+import java.util.*
 
 fun effect(func: () -> Unit) {
     val signalObserver = SignalObserver {
@@ -8,11 +9,11 @@ fun effect(func: () -> Unit) {
         true
     }
 
-    val ctx = currentContext
+    val tmpContexts = contexts
 
-    currentContext = null
+    contexts = Stack()
     currentSignalObserver = signalObserver
     func()
     currentSignalObserver = null
-    currentContext = ctx
+    contexts = tmpContexts
 }
