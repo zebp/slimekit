@@ -1,17 +1,15 @@
 package gl.owsquid.slimekit.observables
 
-import gl.owsquid.slimekit.Context
-import gl.owsquid.slimekit.ExampleMod.logger
 import gl.owsquid.slimekit.context
 import java.util.*
 
-fun dismount(onDismount: () -> Unit) {
+fun dismount(onDismount: (causedBy: Signal<*>?) -> Unit) {
     val ctx = context()
     val uuid = UUID.randomUUID()
     var called = false
-    val callback = {
+    val callback: (Signal<*>?) -> Unit = {
         if (!called) {
-            onDismount()
+            onDismount(it)
             called = true
         }
     }

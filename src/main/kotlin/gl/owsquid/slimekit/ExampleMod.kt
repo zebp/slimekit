@@ -1,11 +1,8 @@
 package gl.owsquid.slimekit
 
-import gl.owsquid.slimekit.ExampleMod.logger
 import gl.owsquid.slimekit.element.*
 import gl.owsquid.slimekit.hooks.every
 import gl.owsquid.slimekit.observables.Signal
-import gl.owsquid.slimekit.observables.dismount
-import gl.owsquid.slimekit.observables.effect
 import gl.owsquid.slimekit.screen.SlimekitScreen
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -17,7 +14,6 @@ import net.minecraft.text.Text
 import org.lwjgl.glfw.GLFW
 import org.slf4j.LoggerFactory
 import java.util.*
-import kotlin.time.Duration.Companion.seconds
 
 
 object ExampleMod : ModInitializer {
@@ -45,8 +41,11 @@ object ExampleMod : ModInitializer {
     }
 }
 
+annotation class Component
+
+var tab by Signal(0)
+
 fun TabbedScreen() = element {
-    var tab by Signal(0)
 
     Screen {
         TabButton(tabIndex = 0) { tab = 0 }
@@ -88,6 +87,7 @@ fun SecondTab() = element {
     }
 }
 
+@Component
 fun ThirdTab() = element {
     val textSignal = Signal("")
     val text by textSignal
@@ -112,4 +112,8 @@ fun TabButton(
         onClick = onClick,
         position = ButtonPosition(x = 160 * tabIndex + 5, y = 5)
     )
+}
+
+fun Column(vararg init: Context.() -> Unit) = element {
+//    this.init()
 }

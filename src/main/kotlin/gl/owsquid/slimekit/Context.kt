@@ -5,7 +5,6 @@ import gl.owsquid.slimekit.observables.Signal
 import gl.owsquid.slimekit.screen.ScreenBuilders
 import net.minecraft.text.Text
 import java.util.*
-import kotlin.streams.toList
 
 var contexts = Stack<Context>()
 
@@ -18,12 +17,16 @@ fun context(): Context {
     }
 }
 
-fun maybeContext(): Context? = try { contexts.peek() } catch (_: EmptyStackException) { null }
+fun maybeContext(): Context? = try {
+    contexts.peek()
+} catch (_: EmptyStackException) {
+    null
+}
 
 sealed class Context(open val screenBuilders: ScreenBuilders) {
-    internal val dismounts: MutableMap<UUID, () -> Unit> = mutableMapOf()
+    internal val dismounts: MutableMap<UUID, (causedBy: Signal<*>?) -> Unit> = mutableMapOf()
     internal val children: MutableList<Context> = mutableListOf()
-    private val observations = mutableListOf<Pair<Signal<*>, UUID>>()
+    private val observations = mutableMapOf<Signal<*>, UUID>()
     var dead = false
     var name = "unnamed"
 
@@ -39,11 +42,9 @@ sealed class Context(open val screenBuilders: ScreenBuilders) {
         }
     }
 
-    fun dismount() {
-        dismounts.forEach { (id, dismount) ->
-            dismount()
-            dismounts.remove(id)
-        }
+    fun dismount(causedBy: Signal<*>? = null) {
+        dismounts.values.forEach { it(causedBy) }
+        dismounts.clear()
 
         children.forEach {
             it.dismount()
@@ -61,21 +62,19 @@ sealed class Context(open val screenBuilders: ScreenBuilders) {
     }
 
     fun observesSignal(signal: Signal<*>) {
-        val observationId = signal.observe {
-            recompute()
+        observations[signal] = signal.observe {
+            recompute(signal)
             true
         }
-
-        observations.add(Pair(signal, observationId))
     }
 
-    fun recompute() {
+    private fun recompute(causedBy: Signal<*>? = null) {
         if (dead) {
             logger.error("TRIED TO RECOMPUTE DEAD CONTEXT! (Context: $name)")
             return
         }
 
-        dismount()
+        dismount(causedBy)
 
         if (this is Populated) {
             val freshContext = Populated(
@@ -104,8 +103,8 @@ fun element(build: Context.() -> Unit) {
     if (current.name == "unnamed") {
         current.name = StackWalker.getInstance()
             .walk {
-                it.dropWhile {
-                        method -> method.methodName.first().isLowerCase()
+                it.dropWhile { method ->
+                    method.methodName.first().isLowerCase()
                 }.toList()
             }.first().methodName
     }
